@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Composition</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  /*
+   * Example scenes. Replace all of this with the project's storyboard.
+   * Sizes follow the legibility rules in references/design-system.md.
+   */
+  .hook {
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .hook h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: var(--font-display-weight);
+    font-size: 150px;
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+  }
+  .hook h1 .accent { color: var(--color-accent); }
+
+  .chart { position: absolute; inset: 0; }
+  .chart svg { position: absolute; left: 8%; top: 22%; width: 56%; height: 60%; overflow: visible; }
+  .chart .axis { stroke: var(--color-muted); stroke-width: 3; fill: none; }
+  .chart .line { stroke: var(--color-accent); stroke-width: 8; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .chart .stat {
+    position: absolute;
+    right: 8%;
+    top: 30%;
+    text-align: right;
+  }
+  .chart .stat .num {
+    font-family: var(--font-display);
+    font-weight: var(--font-display-weight);
+    font-size: 200px;
+    line-height: 1;
+    color: var(--color-accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .chart .stat .label { font-size: 48px; color: var(--color-fg); margin-top: 16px; }
+  .chart .source { position: absolute; left: 8%; bottom: 7%; font-size: 30px; color: var(--color-muted); }
+
+  .end {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    text-align: center;
+  }
+  .end h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: var(--font-display-weight);
+    font-size: 110px;
+    letter-spacing: -0.02em;
+  }
+  .end .bar { width: 0; height: 10px; background: var(--color-accent); margin: 36px auto 0; border-radius: var(--radius); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <section class="scene" id="s1">
+    <div class="camera">
+      <div class="hook"><h1 id="hook-text">One idea per frame, <span class="accent">clearly</span> told.</h1></div>
+    </div>
+  </section>
+
+  <section class="scene" id="s2">
+    <div class="camera chart">
+      <svg viewBox="0 0 1000 600">
+        <path class="axis" d="M0 600 L1000 600 M0 0 L0 600" />
+        <path class="line" id="trend" d="M0 540 L160 500 L320 520 L480 400 L640 330 L800 210 L1000 60" />
+      </svg>
+      <div class="stat"><div class="num" id="stat-num">0%</div><div class="label">replace with what the number measures</div></div>
+      <div class="source">Source: replace with the real data source</div>
+    </div>
+  </section>
+
+  <section class="scene" id="s3">
+    <div class="end"><div><h2 id="end-title">Replace with the closing line</h2><div class="bar" id="end-bar"></div></div></div>
+  </section>
+
+  <div class="grain"></div>
+</div>
+
+<script src="runtime.js"></script>
+<script>
+  const D = Dailies;
+
+  D.composition({
+    width: 1920,
+    height: 1080,
+    fps: 30,
+    duration: 10,
+
+    setup() {
+      // Split once, animate per word in render(t).
+      D.split("#hook-text", "word");
+    },
+
+    render(t) {
+      // Scene 1: hook, words rise in with a stagger, then a slow push-in.
+      const s1 = D.scene("#s1", t, 0, 3.6);
+      if (s1 !== null) {
+        D.split("#hook-text").forEach((w, i) =>
+          D.animate(w, s1, [[0.2 + i * 0.07, { opacity: 0, y: 50 }], [0.75 + i * 0.07, { opacity: 1, y: 0 }, "outExpo"]]));
+        D.animate("#s1 .camera", s1, [[0, { scale: 1 }], [3.6, { scale: 1.04 }, "linear"]]);
+        D.animate("#s1 .hook", s1, [[3.0, { opacity: 1 }], [3.6, { opacity: 0 }, "inCubic"]]);
+      }
+
+      // Scene 2: line draws on, number counts up, both land together.
+      const s2 = D.scene("#s2", t, 3.6, 7.4);
+      if (s2 !== null) {
+        D.draw("#trend", D.ease.inOutCubic(D.range(s2, 0.3, 1.8)));
+        D.countUp("#stat-num", 0, 31, D.ease.outCubic(D.range(s2, 0.6, 1.5)), (n) => `${Math.round(n)}%`);
+        D.animate("#s2 .stat", s2, [[0.4, { opacity: 0, x: 40 }], [1.0, { opacity: 1, x: 0 }, "outExpo"]]);
+        D.animate("#s2 .source", s2, [[1.6, { opacity: 0 }], [2.0, { opacity: 1 }]]);
+        D.animate("#s2 .camera", s2, [[0, { opacity: 0 }], [0.3, { opacity: 1 }], [3.4, { opacity: 1 }], [3.8, { opacity: 0 }, "inCubic"]]);
+      }
+
+      // Scene 3: closing line, accent bar wipes in.
+      const s3 = D.scene("#s3", t, 7.4, 10);
+      if (s3 !== null) {
+        D.animate("#end-title", s3, [[0.1, { opacity: 0, y: 30, blur: 8 }], [0.8, { opacity: 1, y: 0, blur: 0 }, "outExpo"]]);
+        D.apply("#end-bar", { width: 360 * D.ease.outExpo(D.range(s3, 0.6, 0.8)) });
+      }
+    },
+  });
+</script>
+</body>
+</html>

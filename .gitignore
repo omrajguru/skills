@@ -1,0 +1,9 @@
+node_modules/
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+
+# dailies: reference images are downloaded on each machine by scripts/refs.py fetch; only their credits are versioned.
+skills/dailies/image/**/*.jpg
+skills/dailies/image/_boards/
